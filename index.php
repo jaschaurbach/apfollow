@@ -25,6 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST["remote_follow"])) {
     curl_setopt($curl_session, CURLOPT_BINARYTRANSFER, true);
     curl_setopt($curl_session, CURLOPT_RETURNTRANSFER, true);
 
+    // Allow redirects for webfinger lookup
+    curl_setopt($curl_session, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($curl_session, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+
+    // Allow redirects for webfinger lookup
+    curl_setopt($curl_session, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($curl_session, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+
     $json_data = json_decode(curl_exec($curl_session), true);
     curl_close($curl_session);
 
@@ -67,12 +75,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST["remote_follow"])) {
         exit;
     }
 
-// if this is a get request with the appropriate parameters, we display the form
+    // if this is a get request with the appropriate parameters, we display the form
 } elseif (!empty($_GET["user"]) && !empty($_GET["instance"]) || !empty($_GET["href"])) {
     // Open curl session
     $curl_session = curl_init();
     curl_setopt($curl_session, CURLOPT_BINARYTRANSFER, true);
     curl_setopt($curl_session, CURLOPT_RETURNTRANSFER, true);
+
+    // Allow redirects for webfinger lookup
+    curl_setopt($curl_session, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($curl_session, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
 
     if (empty($_GET["href"])) {
         $local_user = $_GET["user"];
@@ -117,7 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST["remote_follow"])) {
     // make a request to the profile link
     curl_setopt($curl_session, CURLOPT_URL, $profile_link);
     curl_setopt($curl_session, CURLOPT_HTTPHEADER, ["Accept: application/activity+json"]);
-    curl_setopt($curl_session, CURLOPT_FOLLOWLOCATION, true);
     $json_data = json_decode(curl_exec($curl_session), true);
     curl_close($curl_session);
 
@@ -136,10 +147,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST["remote_follow"])) {
             $local_fullname = $json_data["name"];
         }
         if (array_key_exists("icon", $json_data)) {
-            $local_icon = $json_data["icon"]["url"];
+            if (array_key_exists("url", $json_data["icon"])) {
+                $local_icon = $json_data["icon"]["url"];
+            }
         }
         if (array_key_exists("image", $json_data)) {
-            $local_image = $json_data["image"]["url"];
+            if (array_key_exists("url", $json_data["image"])) {
+                $local_image = $json_data["image"]["url"];
+            }
         }
         // if the user specified the id manually, we should set the username
         if (empty($local_user)) {
